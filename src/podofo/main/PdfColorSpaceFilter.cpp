@@ -86,6 +86,11 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /Indexed color space name");
                 return false;
             }
+            case PdfColorSpaceType::CalRGB:
+            {
+                colorSpace = GetDeviceRGBInstace();
+                return true;
+            }
             default:
                 PoDoFo::LogMessage(PdfLogSeverity::Warning, "Unsupported color space filter {}", name->GetString());
                 return false;
@@ -105,6 +110,11 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 return true;
             }
             case PdfColorSpaceType::DeviceRGB:
+            {
+                colorSpace = GetDeviceRGBInstace();
+                return true;
+            }
+            case PdfColorSpaceType::CalRGB:
             {
                 colorSpace = GetDeviceRGBInstace();
                 return true;
