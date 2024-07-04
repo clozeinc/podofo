@@ -159,6 +159,7 @@ enum class PdfTextExtractFlags
     ComputeBoundingBox = 32,    ///< NOTE: Currently the bounding is inaccurate
     RawCoordinates = 64,
     ExtractSubstring = 128,     ///< NOTE: Extract the matched substring
+    IgnoreRotated = 256,
 };
 
 enum class PdfXObjectType : uint8_t

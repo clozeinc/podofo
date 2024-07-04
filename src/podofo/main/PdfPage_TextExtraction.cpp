@@ -92,6 +92,7 @@ struct EntryOptions
     bool ComputeBoundingBox;
     bool RawCoordinates;
     bool ExtractSubstring;
+    bool IgnoreRotated;
 };
 
 using StringChunk = list<StatefulString>;
@@ -979,7 +980,9 @@ void ExtractionContext::TryPushChunk()
 
 void ExtractionContext::pushChunk()
 {
-    Chunks.push_back(std::move(Chunk));
+    if(!Options.IgnoreRotated || (!Chunk->front().State.T_rm[1] && !Chunk->front().State.T_rm[2]))
+        Chunks.push_back(std::move(Chunk)); // Push it if not rotated or we're allowing rotated text
+    
     Chunk = std::make_unique<StringChunk>();
 }
 
@@ -1067,7 +1070,7 @@ bool ExtractionContext::areChunksSpaced(double& distance)
     auto prev_curr = curr - PrevChunkT_rm_Pos;
     distance = prev_curr.GetLength();
     double dot1 = prev_curr.Dot(Vector2(1, 0)); // Hardcoded for horizontal text
-    bool spaced = distance + SEPARATION_EPSILON >= States.Current->WordSpacingLength;
+    bool spaced = distance + SEPARATION_EPSILON >= States.Current->WordSpacingLength * States.Current->T_rm[0];
     if (dot1 < 0 && spaced)
     {
         auto& prevString = getPreviouString();
@@ -1234,8 +1237,8 @@ void TextState::ComputeDependentState()
 
 void TextState::ComputeSpaceDescriptors()
 {
-    WordSpacingLength = (WordSpacingVectorRaw * T_m.GetScalingRotation()).GetLength();
-    CharSpaceLength = (SpaceCharVectorRaw * T_m.GetScalingRotation()).GetLength();
+    WordSpacingLength = (WordSpacingVectorRaw * T_m.GetScalingRotation()).GetLength() * PdfState.FontSize * PdfState.FontScale;
+    CharSpaceLength = (SpaceCharVectorRaw * T_m.GetScalingRotation()).GetLength() * PdfState.FontSize * PdfState.FontScale;
 }
 
 void TextState::ComputeT_rm()
@@ -1290,33 +1293,27 @@ double computeLength(const vector<const StatefulString*>& strings, const vector<
     PODOFO_ASSERT(lowerIndex <= upperIndex);
     auto& fromAddr = glyphAddresses[lowerIndex];
     auto& toAddr = glyphAddresses[upperIndex];
-    if (fromAddr.StringIndex == toAddr.StringIndex)
-    {
-        // NOTE: Include the last glyph
-        auto str = strings[fromAddr.StringIndex];
-        double length = 0;
-        for (unsigned i = 0; i <= toAddr.GlyphIndex; i++)
-            length += str->Lengths[i];
 
-        return length;
-    }
-    else
-    {
-        auto fromStr = strings[fromAddr.StringIndex];
-        auto toStr = strings[toAddr.StringIndex];
+    auto fromStr = strings[fromAddr.StringIndex];
+    auto toStr = strings[toAddr.StringIndex];
 
-        // Advance the position before the first glyph
-        auto fromPosition = fromStr->Position;
-        for (unsigned i = 0; i < fromAddr.GlyphIndex; i++)
-            fromPosition += Vector2(fromStr->Lengths[i], 0);
+    double fromScale = fromStr->State.T_rm[0];
+    double toScale = toStr->State.T_rm[0];
 
-        // NOTE: Include the last glyph
-        auto toPosition = toStr->Position;
-        for (unsigned i = 0; i <= toAddr.GlyphIndex; i++)
-            toPosition += Vector2(toStr->Lengths[i], 0);
+    // Advance the position before the first glyph
+    auto fromPosition = fromStr->Position;
 
-        return (fromPosition - toPosition).GetLength();
-    }
+    for (unsigned i = 0; i < fromAddr.GlyphIndex; i++)
+        fromPosition += Vector2(fromStr->Lengths[i] * fromScale, 0);
+
+    // NOTE: Include the last glyph
+
+    auto toPosition = toStr->Position;
+
+    for (unsigned i = 0; i <= toAddr.GlyphIndex; i++)
+        toPosition += Vector2(toStr->Lengths[i] * toScale, 0);
+
+    return (fromPosition - toPosition).GetLength();
 }
 
 // Verify if the string matches the pattern and verify
@@ -1378,6 +1375,12 @@ Rect computeBoundingBox(const TextState& textState, double boxWidth)
             * transform).GetLength();
         ascent = (Vector2(0, font->GetMetrics().GetAscent() * pdfState.FontSize * pdfState.FontScale)
             * transform).GetLength();
+
+        // Rescale ascent/descent to the scale
+
+        double lineHeight = ascent + descend;
+        descend = descend / lineHeight * transform[3] * pdfState.FontSize * pdfState.FontScale;
+        ascent = ascent /lineHeight * transform[3] * pdfState.FontSize * pdfState.FontScale;
     }
 
     auto position = textState.T_rm.GetTranslationVector();
@@ -1420,6 +1423,7 @@ EntryOptions optionsFromFlags(PdfTextExtractFlags flags)
     ret.ComputeBoundingBox = (flags & PdfTextExtractFlags::ComputeBoundingBox) != PdfTextExtractFlags::None;
     ret.RawCoordinates = (flags & PdfTextExtractFlags::RawCoordinates) != PdfTextExtractFlags::None;
     ret.ExtractSubstring = (flags & PdfTextExtractFlags::ExtractSubstring) != PdfTextExtractFlags::None;
+    ret.IgnoreRotated = (flags & PdfTextExtractFlags::IgnoreRotated) != PdfTextExtractFlags::None;
 
     if (ret.RegexPattern)
     {
