@@ -88,7 +88,42 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
             }
             case PdfColorSpaceType::CalRGB:
             {
+                // Fallback to device RGB so images can still be processed
                 colorSpace = GetDeviceRGBInstace();
+                return true;
+            }
+            case PdfColorSpaceType::ICCBased:
+            {
+                // Try and pick the best alternative colorspace we can based on the number of components
+                
+                if(!arr->MustFindAt(1).IsDictionary())
+                {
+                    PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /ICCBased color space dictionary");
+                    return false;
+                }
+                
+                const PdfDictionary &dict = arr->MustFindAt(1).GetDictionary();
+                
+                if(!dict.HasKey("N"))
+                {
+                    PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /ICCBased color space components");
+                    return false;
+                }
+                
+                int components = dict.GetKey("N")->GetNumber();
+
+                if (components == 1)
+                    colorSpace = GetDeviceGrayInstace();
+                else if(components == 3)
+                    colorSpace = GetDeviceRGBInstace();
+                else if(components == 4)
+                    colorSpace = GetDeviceCMYKInstace();
+                else
+                {
+                    PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /ICCBased color space components");
+                    return false;
+                }
+                
                 return true;
             }
             default:
@@ -110,11 +145,6 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 return true;
             }
             case PdfColorSpaceType::DeviceRGB:
-            {
-                colorSpace = GetDeviceRGBInstace();
-                return true;
-            }
-            case PdfColorSpaceType::CalRGB:
             {
                 colorSpace = GetDeviceRGBInstace();
                 return true;

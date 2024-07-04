@@ -93,7 +93,7 @@ void PdfParser::Parse(InputStreamDevice& device, bool loadOnDemand)
 
         // If this is being called from a constructor then the
         // destructor will not be called.
-        // Clean up here  
+        // Clean up here
         reset();
         PODOFO_PUSH_FRAME_INFO(e, "Unable to load objects from file");
         throw e;
@@ -239,7 +239,7 @@ void PdfParser::readNextTrailer(InputStreamDevice& device)
 
     if (trailer->GetDictionary().HasKey("XRefStm"))
     {
-        // Whenever we read a XRefStm key, 
+        // Whenever we read a XRefStm key,
         // we know that the file was updated.
         if (!trailer->GetDictionary().HasKey("Prev"))
             m_IncrementalUpdateCount++;
@@ -262,7 +262,7 @@ void PdfParser::readNextTrailer(InputStreamDevice& device)
     {
         if (offset > 0)
         {
-            // Whenever we read a Prev key, 
+            // Whenever we read a Prev key,
             // we know that the file was updated.
             m_IncrementalUpdateCount++;
 
@@ -430,7 +430,7 @@ bool CheckEOL(char e1, char e2)
     // From pdf reference, page 94:
     // If the file's end-of-line marker is a single character (either a carriage return or a line feed),
     // it is preceded by a single space; if the marker is 2 characters (both a carriage return and a line feed),
-    // it is not preceded by a space.            
+    // it is not preceded by a space.
     return ((e1 == '\r' && e2 == '\n') || (e1 == '\n' && e2 == '\r') || (e1 == ' ' && (e2 == '\r' || e2 == '\n')));
 }
 
@@ -443,7 +443,7 @@ void PdfParser::ReadXRefSubsection(InputStreamDevice& device, int64_t& firstObje
 {
 #ifdef PODOFO_VERBOSE_DEBUG
     PoDoFo::LogMessage(PdfLogSeverity::Debug, "Reading XRef Section: {} {} Objects", firstObject, objectCount);
-#endif // PODOFO_VERBOSE_DEBUG 
+#endif // PODOFO_VERBOSE_DEBUG
 
     if (firstObject < 0)
         PODOFO_RAISE_ERROR_INFO(PdfErrorCode::ValueOutOfRange, "ReadXRefSubsection: first object is negative");
@@ -579,9 +579,9 @@ void PdfParser::ReadXRefStreamContents(InputStreamDevice& device, size_t offset,
         {
             m_IncrementalUpdateCount++;
 
-            // PDFs that have been through multiple PDF tools may have a mix of xref tables (ISO 32000-1 7.5.4) 
-            // and XRefStm streams (ISO 32000-1 7.5.8.1) and in the Prev chain, 
-            // so call ReadXRefContents (which deals with both) instead of ReadXRefStreamContents 
+            // PDFs that have been through multiple PDF tools may have a mix of xref tables (ISO 32000-1 7.5.4)
+            // and XRefStm streams (ISO 32000-1 7.5.8.1) and in the Prev chain,
+            // so call ReadXRefContents (which deals with both) instead of ReadXRefStreamContents
             ReadXRefContents(device, previousOffset, readOnlyTrailer);
         }
         catch (PdfError& e)
@@ -728,7 +728,7 @@ void PdfParser::readObjectsInternal(InputStreamDevice& device)
                     else if (entry.Generation == 0)
                     {
                         PODOFO_ASSERT(entry.Offset == 0);
-                        // There are broken PDFs which add objects with 'n' 
+                        // There are broken PDFs which add objects with 'n'
                         // and 0 offset and 0 generation number
                         // to the xref table instead of using free objects
                         // treating them as free objects
@@ -768,8 +768,8 @@ void PdfParser::readObjectsInternal(InputStreamDevice& device)
             m_Objects->AddFreeObject(PdfReference(i, 1));
         }
         // the linked free list in the xref section is not always correct in pdf's
-        // (especially Illustrator) but Acrobat still accepts them. I've seen XRefs 
-        // where some object-numbers are altogether missing and multiple XRefs where 
+        // (especially Illustrator) but Acrobat still accepts them. I've seen XRefs
+        // where some object-numbers are altogether missing and multiple XRefs where
         // the link list is broken.
         // Because PdfIndirectObjectList relies on a unbroken range, fill the free list more
         // robustly from all places which are either free or unparsed
@@ -876,7 +876,7 @@ void PdfParser::updateDocumentVersion()
             if (versionObj.IsName())
             {
                 auto version = PoDoFo::GetPdfVersion(versionObj.GetName().GetString());
-                if (version != PdfVersion::Unknown)
+                if ((version != PdfVersion::Unknown) && (version != m_PdfVersion))
                 {
                     PoDoFo::LogMessage(PdfLogSeverity::Information,
                         "Updating version from {} to {}",
