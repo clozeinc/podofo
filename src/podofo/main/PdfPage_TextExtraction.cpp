@@ -1052,8 +1052,14 @@ void ExtractionContext::tryAddEntry(const StatefulString& currStr)
                 {
                     // Current entry is space separated and either we
                     //  tokenize words, or it's an hard entry separation
+                    
                     TryPushChunk();
-                    addEntry();
+                    
+                    if(Chunk->size() != 0 || Chunks.size() != 0)
+                    {
+                        // Make sure we haven't discarded the chunk because of rotation
+                        addEntry();
+                    }
                 }
                 else
                 {
@@ -1067,7 +1073,12 @@ void ExtractionContext::tryAddEntry(const StatefulString& currStr)
         {
             // Current entry is not on same line
             TryPushChunk();
-            addEntry();
+            
+            if(Chunk->size() != 0 || Chunks.size() != 0)
+            {
+                // Make sure we haven't discarded the chunk because of rotation
+                addEntry();
+            }
         }
     }
 }
