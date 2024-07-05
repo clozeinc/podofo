@@ -1070,7 +1070,10 @@ bool ExtractionContext::areChunksSpaced(double& distance)
     auto prev_curr = curr - PrevChunkT_rm_Pos;
     distance = prev_curr.GetLength();
     double dot1 = prev_curr.Dot(Vector2(1, 0)); // Hardcoded for horizontal text
-    bool spaced = distance + SEPARATION_EPSILON >= States.Current->WordSpacingLength * States.Current->T_rm[0];
+    double baseSpacing = std::max(States.Current->WordSpacingLength, States.Current->PdfState.FontSize) * States.Current->T_rm[0];
+
+    bool spaced = (distance + SEPARATION_EPSILON >= baseSpacing * 0.102);
+    
     if (dot1 < 0 && spaced)
     {
         auto& prevString = getPreviouString();
