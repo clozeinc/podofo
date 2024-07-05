@@ -62,9 +62,24 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 if (!arr->MustFindAt(2).TryGetNumber(maxIndex) && maxIndex < 1)
                     goto InvalidIndexed;
 
-                stream = arr->MustFindAt(3).GetStream();
-                if (stream == nullptr)
-                    goto InvalidIndexed;
+                if(arr->MustFindAt(3).IsString())
+                {
+                    const PdfString &pstr = arr->MustFindAt(3).GetString();
+                    
+                    if(pstr.IsEmpty())
+                        goto InvalidIndexed;
+                    
+                    lookup = pstr.GetRawData();
+                }
+                else
+                {
+                    stream = arr->MustFindAt(3).GetStream();
+                    
+                    if (stream == nullptr)
+                        goto InvalidIndexed;
+                    
+                    lookup = stream->GetCopy();
+                }
 
                 switch (baseColorSpace->GetPixelFormat())
                 {
@@ -75,7 +90,6 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                         PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, "Unsupported base color space in /Indexed color space");
                 }
 
-                lookup = stream->GetCopy();
                 if (lookup.size() < componentCount * ((unsigned)maxIndex + 1))
                     goto InvalidIndexed;        // Table has invalid lookup map size
 
