@@ -240,6 +240,10 @@ ReadStream:
                     m_Encrypt = nullptr;
             }
         }
+        else if(filterObj != nullptr && filterObj->IsName() && filterObj->GetName() == "Crypt")
+        {
+            m_Encrypt = nullptr;
+        }
     }
 
     // Set stream raw data without marking the object dirty
