@@ -342,9 +342,24 @@ bool PdfFont::TryScanEncodedString(const PdfString& encodedStr, const PdfTextSta
             success = false;
 
         length = getGlyphLength(GetCIDLengthRaw(cid.Id), state, false);
+        
+        if(utls::IsWhiteSpace(cid.Id))
+            length = std::max(0.0, length + state.WordSpacing);
+        
         lengths.push_back(length);
         positions.push_back(prevOffset);
         prevOffset = (unsigned)utf8str.length();
+        
+        if((state.CharSpacing / state.FontSize >= 0.102)
+        && (state.CharSpacing / state.FontSize <= 0.6))
+        {
+            // Introduce extra spaces in the string if decoding has lots of spacing around characters
+            
+            utf8::unchecked::append(32, std::back_inserter(utf8str));
+            lengths.push_back(0);
+            positions.push_back(prevOffset);
+            prevOffset = (unsigned)utf8str.length();
+        }
     }
 
     return success;

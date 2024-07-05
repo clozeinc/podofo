@@ -29,8 +29,7 @@ using namespace PoDoFo;
 
 constexpr double SAME_LINE_THRESHOLD = 0.01;
 constexpr double SEPARATION_EPSILON = 0.0000001;
-// Inferred empirically on Adobe Acrobat Pro
-constexpr unsigned HARD_SEPARATION_SPACING_MULTIPLIER = 6;
+
 #define ASSERT(condition, message, ...) if (!condition)\
     PoDoFo::LogMessage(PdfLogSeverity::Warning, message, ##__VA_ARGS__);
 
@@ -982,7 +981,7 @@ void ExtractionContext::pushChunk()
 {
     if(!Options.IgnoreRotated || (!Chunk->front().State.T_rm[1] && !Chunk->front().State.T_rm[2]))
         Chunks.push_back(std::move(Chunk)); // Push it if not rotated or we're allowing rotated text
-    
+
     Chunk = std::make_unique<StringChunk>();
 }
 
@@ -1024,16 +1023,32 @@ void ExtractionContext::addEntry()
 void ExtractionContext::tryAddEntry(const StatefulString& currStr)
 {
     PODOFO_INVARIANT(Chunk != nullptr);
+    
     if (Chunks.size() > 0 || Chunk->size() > 0)
     {
         if (areEqual(States.Current->T_rm.Get<Ty>(), CurrentEntryT_rm_y))
         {
             double distance;
-            if (areChunksSpaced(distance))
+            bool isSplittable = currStr.IsWhiteSpace;
+            
+            // TODO:DF
+            if(Chunk->size() > 0)
             {
-                if (Options.TokenizeWords
-                    || distance + SEPARATION_EPSILON >
-                        States.Current->CharSpaceLength * HARD_SEPARATION_SPACING_MULTIPLIER)
+                if(Chunk->back().IsWhiteSpace)
+                    isSplittable = true;
+            }
+            else if(!Chunks.back()->empty())
+            {
+                if(Chunks.back()->back().IsWhiteSpace)
+                    isSplittable = true;
+            }
+            
+            if (areChunksSpaced(distance) || isSplittable)
+            {
+                double baseSpacing = std::max(States.Current->WordSpacingLength, States.Current->PdfState.FontSize) * States.Current->T_rm[0];
+                bool spaced = (distance + SEPARATION_EPSILON >= baseSpacing * 0.6);
+
+                if (Options.TokenizeWords || spaced || isSplittable)
                 {
                     // Current entry is space separated and either we
                     //  tokenize words, or it's an hard entry separation
@@ -1044,8 +1059,7 @@ void ExtractionContext::tryAddEntry(const StatefulString& currStr)
                 {
                     // Add "fake" space
                     auto& prevString = getPreviouString();
-                    if (!(prevString.EndsWithWhiteSpace() || currStr.BeginsWithWhiteSpace()))
-                        Chunk->push_back(StatefulString(" ", prevString.State, { distance }, { 0 }));
+                    Chunk->push_back(StatefulString(" ", prevString.State, { distance }, { 0 }));
                 }
             }
         }
@@ -1073,7 +1087,7 @@ bool ExtractionContext::areChunksSpaced(double& distance)
     double baseSpacing = std::max(States.Current->WordSpacingLength, States.Current->PdfState.FontSize) * States.Current->T_rm[0];
 
     bool spaced = (distance + SEPARATION_EPSILON >= baseSpacing * 0.102);
-    
+
     if (dot1 < 0 && spaced)
     {
         auto& prevString = getPreviouString();
@@ -1128,7 +1142,7 @@ void splitStringBySpaces(vector<StatefulString> &separatedStrings, const Statefu
     unsigned upperPosLim = (unsigned)str.String.length();
     unsigned lowerPosIndex;
     unsigned upperPosLimIndex;
-    
+
     auto pushString = [&]() {
         getSubstringIndices(str.StringPositions, lowerPos, upperPosLim, lowerPosIndex, upperPosLimIndex);
         double length = 0;
