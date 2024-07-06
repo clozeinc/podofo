@@ -67,7 +67,7 @@ enum class PdfPermissions
     Edit = 0x00000008,  ///< Allow modifying the document besides annotations, form fields or changing pages
     Copy = 0x00000010,  ///< Allow text and graphic extraction
     EditNotes = 0x00000020,  ///< Add or modify text annotations or form fields (if PdfPermissions::Edit is set also allow to create interactive form fields including signature)
-    FillAndSign = 0x00000100,  ///< Fill in existing form or signature fields 
+    FillAndSign = 0x00000100,  ///< Fill in existing form or signature fields
     Accessible = 0x00000200,  ///< Extract text and graphics to support user with disabilities
     DocAssembly = 0x00000400,  ///< Assemble the document: insert, create, rotate delete pages or add bookmarks
     HighPrint = 0x00000800,   ///< Print a high resolution version of the document
@@ -612,7 +612,7 @@ class PdfEncryptAESV3 : public PdfEncryptSHABase, public PdfEncryptAESBase
 {
 public:
     PdfEncryptAESV3(PdfString oValue, PdfString oeValue, PdfString uValue, PdfString ueValue,
-        PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision rev);
+        PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision rev, bool encryptMetadata);
     PdfEncryptAESV3(const std::string_view& userPassword, const std::string_view& ownerPassword,
         PdfAESV3Revision rev, PdfPermissions protection = PdfPermissions::Default);
     PdfEncryptAESV3(const PdfEncrypt& rhs);

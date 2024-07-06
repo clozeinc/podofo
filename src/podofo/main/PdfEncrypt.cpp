@@ -58,12 +58,12 @@ public:
     {
         aes = EVP_CIPHER_CTX_new();
     }
-    
+
     EVP_CIPHER_CTX* getEngine()
     {
         return aes;
     }
-    
+
     ~AESCryptoEngine()
     {
         EVP_CIPHER_CTX_free(aes);
@@ -97,7 +97,7 @@ public:
 private:
     EVP_CIPHER_CTX* rc4;
 };
-    
+
 /** A class that can encrypt/decrpyt streamed data block wise
  *  This is used in the input and output stream encryption implementation.
  *  Only the RC4 encryption algorithm is supported
@@ -515,7 +515,7 @@ unique_ptr<PdfEncrypt> PdfEncrypt::CreateFromObject(const PdfObject& encryptObj)
             PdfString ueValue = encryptObj.GetDictionary().MustFindKey("UE").GetString();
 
             return unique_ptr<PdfEncrypt>(new PdfEncryptAESV3(oValue, oeValue, uValue,
-                ueValue, pValue, permsValue, (PdfAESV3Revision)rValue));
+                ueValue, pValue, permsValue, (PdfAESV3Revision)rValue, encryptMetadata));
         }
 #endif // PODOFO_HAVE_LIBIDN
         else
@@ -731,7 +731,7 @@ void PdfEncryptMD5Base::ComputeEncryptionKey(const string_view& documentId,
             PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error MD5-hashing data");
     }
 
-    // If document metadata is not being encrypted, 
+    // If document metadata is not being encrypted,
     // pass 4 bytes with the value 0xFFFFFFFF to the MD5 hash function.
     if (!encryptMetadata)
     {
@@ -848,7 +848,7 @@ PdfEncryptRC4Base::~PdfEncryptRC4Base()
 {
     delete m_rc4;
 }
-    
+
 /**
  * RC4 is the standard encryption algorithm used in PDF format
  */
@@ -890,7 +890,7 @@ void PdfEncryptMD5Base::GenerateInitialVector(unsigned char iv[]) const
 {
     ssl::ComputeMD5(m_documentId, iv);
 }
-    
+
 void PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary& dictionary) const
 {
     dictionary.AddKey(PdfName::KeyFilter, PdfName("Standard"));
@@ -939,7 +939,7 @@ void PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary& dictionary) co
     dictionary.AddKey("U", PdfString::FromRaw({ reinterpret_cast<const char*>(this->GetUValue()), 32 }));
     dictionary.AddKey("P", PdfVariant(static_cast<int64_t>(this->GetPValue())));
 }
-    
+
 void PdfEncryptRC4::GenerateEncryptionKey(const string_view& documentId)
 {
     unsigned char userpswd[32];
@@ -957,7 +957,7 @@ void PdfEncryptRC4::GenerateEncryptionKey(const string_view& documentId)
     ComputeEncryptionKey(m_documentId, userpswd,
         m_oValue, m_pValue, m_eKeyLength, m_rValue, m_uValue, m_EncryptMetadata);
 }
-    
+
 bool PdfEncryptRC4::Authenticate(const string_view& password, const string_view& documentId)
 {
     bool success = false;
@@ -1109,7 +1109,7 @@ unique_ptr<OutputStream> PdfEncryptRC4::CreateEncryptionOutputStream(OutputStrea
     this->CreateObjKey(objkey, keylen, objref);
     return unique_ptr<OutputStream>(new PdfRC4OutputStream(outputStream, m_rc4key, m_rc4last, objkey, keylen));
 }
-    
+
 PdfEncryptAESBase::PdfEncryptAESBase()
 {
     m_aes = new AESCryptoEngine();
@@ -1183,7 +1183,7 @@ void PdfEncryptAESBase::BaseEncrypt(const unsigned char* key, unsigned keyLen, c
     if (rc != 1)
         PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error AES-encrypting data");
 }
-    
+
 void PdfEncryptAESV2::GenerateEncryptionKey(const string_view& documentId)
 {
     unsigned char userpswd[32];
@@ -1232,12 +1232,12 @@ bool PdfEncryptAESV2::Authenticate(const string_view& password, const string_vie
 
     return success;
 }
-    
+
 size_t PdfEncryptAESV2::CalculateStreamOffset() const
 {
     return AES_IV_LENGTH;
 }
-    
+
 void PdfEncryptAESV2::Encrypt(const char* inStr, size_t inLen, const PdfReference& objref,
     char* outStr, size_t outLen) const
 {
@@ -1269,7 +1269,7 @@ void PdfEncryptAESV2::Decrypt(const char* inStr, size_t inLen, const PdfReferenc
         (const unsigned char*)inStr + offset,
         inLen - offset, (unsigned char*)outStr, outLen);
 }
-    
+
 PdfEncryptAESV2::PdfEncryptAESV2(const string_view& userPassword, const string_view& ownerPassword, PdfPermissions protection) : PdfEncryptAESBase()
 {
     // setup object
@@ -1294,7 +1294,7 @@ PdfEncryptAESV2::PdfEncryptAESV2(const string_view& userPassword, const string_v
 
 PdfEncryptAESV2::PdfEncryptAESV2(const PdfEncrypt& rhs)
     : PdfEncryptMD5Base(rhs) { }
-    
+
 PdfEncryptAESV2::PdfEncryptAESV2(PdfString oValue, PdfString uValue, PdfPermissions pValue, bool encryptMetadata) : PdfEncryptAESBase()
 {
     m_pValue = pValue;
@@ -1330,7 +1330,7 @@ size_t PdfEncryptAESV2::CalculateStreamLength(size_t length) const
 
     return realLength;
 }
-    
+
 unique_ptr<InputStream> PdfEncryptAESV2::CreateEncryptionInputStream(InputStream& inputStream, size_t inputLen, const PdfReference& objref)
 {
     unsigned char objkey[MD5_DIGEST_LENGTH];
@@ -1338,7 +1338,7 @@ unique_ptr<InputStream> PdfEncryptAESV2::CreateEncryptionInputStream(InputStream
     this->CreateObjKey(objkey, keylen, objref);
     return unique_ptr<InputStream>(new PdfAESInputStream(inputStream, inputLen, objkey, keylen));
 }
-    
+
 unique_ptr<OutputStream> PdfEncryptAESV2::CreateEncryptionOutputStream(OutputStream& outputStream, const PdfReference& objref)
 {
     (void)outputStream;
@@ -1350,9 +1350,9 @@ unique_ptr<OutputStream> PdfEncryptAESV2::CreateEncryptionOutputStream(OutputStr
 
     PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "CreateEncryptionOutputStream does not yet support AESV2");
 }
-    
+
 #ifdef PODOFO_HAVE_LIBIDN
-    
+
 PdfEncryptSHABase::PdfEncryptSHABase()
     : m_ueValue{ }, m_oeValue{ }, m_permsValue{ }
 {
@@ -1582,7 +1582,7 @@ void PdfEncryptSHABase::ComputeEncryptionKey()
     for (unsigned i = 0; i < m_keyLength; i++)
         m_encryptionKey[i] = rand() % 255;
 }
-    
+
 bool PdfEncryptSHABase::Authenticate(const std::string_view& documentID, const std::string_view& password,
     const bufferview& uValue, const std::string_view& ueValue,
     const bufferview& oValue, const std::string_view& oeValue,
@@ -1601,13 +1601,13 @@ bool PdfEncryptSHABase::Authenticate(const std::string_view& documentID, const s
 
     return Authenticate(password, documentID);
 }
-    
+
 void PdfEncryptSHABase::GenerateInitialVector(unsigned char iv[]) const
 {
     for (unsigned i = 0; i < AES_IV_LENGTH; i++)
         iv[i] = rand() % 255;
 }
-    
+
 void PdfEncryptSHABase::CreateEncryptionDictionary(PdfDictionary& dictionary) const
 {
     dictionary.AddKey(PdfName::KeyFilter, PdfName("Standard"));
@@ -1637,7 +1637,7 @@ void PdfEncryptSHABase::CreateEncryptionDictionary(PdfDictionary& dictionary) co
 
     dictionary.AddKey("P", PdfVariant(static_cast<int64_t>(this->GetPValue())));
 }
-    
+
 void PdfEncryptAESV3::GenerateEncryptionKey(const string_view& documentId)
 {
     (void)documentId;
@@ -1819,10 +1819,11 @@ PdfEncryptAESV3::PdfEncryptAESV3(const PdfEncrypt& rhs)
     : PdfEncryptSHABase(rhs) {}
 
 PdfEncryptAESV3::PdfEncryptAESV3(PdfString oValue, PdfString oeValue, PdfString uValue,
-    PdfString ueValue, PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision revision) : PdfEncryptAESBase()
+    PdfString ueValue, PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision revision, bool encryptMetadata) : PdfEncryptAESBase()
 {
     m_pValue = pValue;
     m_Algorithm = revision == PdfAESV3Revision::R6 ? PdfEncryptAlgorithm::AESV3R6 : PdfEncryptAlgorithm::AESV3;
+    m_EncryptMetadata = encryptMetadata;
 
     m_eKeyLength = PdfKeyLength::L256;
     m_keyLength = (int)PdfKeyLength::L256 / 8;
@@ -1876,7 +1877,7 @@ unique_ptr<OutputStream> PdfEncryptAESV3::CreateEncryptionOutputStream(OutputStr
     (void)objref;
     PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "CreateEncryptionOutputStream does not yet support AESV3");
 }
-    
+
 #endif // PODOFO_HAVE_LIBIDN
 
 int PdfEncrypt::GetKeyLength() const
