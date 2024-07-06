@@ -83,9 +83,18 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
 
                 switch (baseColorSpace->GetPixelFormat())
                 {
+                    case PdfColorSpacePixelFormat::Grayscale:
+                        componentCount = 1;
+                        break;
+
                     case PdfColorSpacePixelFormat::RGB:
                         componentCount = 3;
                         break;
+
+                    case PdfColorSpacePixelFormat::CMYK:
+                        componentCount = 4;
+                        break;
+
                     default:
                         PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, "Unsupported base color space in /Indexed color space");
                 }

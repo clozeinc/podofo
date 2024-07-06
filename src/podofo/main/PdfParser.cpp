@@ -690,9 +690,10 @@ void PdfParser::readObjectsInternal(InputStreamDevice& device)
                         unique_ptr<PdfParserObject> obj(new PdfParserObject(m_Objects->GetDocument(), reference, device, (ssize_t)entry.Offset));
                         try
                         {
-                            obj->SetEncrypt(m_Encrypt);
                             if (m_Encrypt != nullptr && obj->IsDictionary())
                             {
+                                obj->SetEncrypt(m_Encrypt);
+
                                 auto typeObj = obj->GetDictionary().GetKey(PdfName::KeyType);
                                 if (typeObj != nullptr && typeObj->IsName() && typeObj->GetName() == "XRef")
                                 {
@@ -702,6 +703,8 @@ void PdfParser::readObjectsInternal(InputStreamDevice& device)
                                         obj->DelayedLoad();
                                 }
                             }
+                            else
+                                obj->SetEncrypt(m_Encrypt);
 
                             m_Objects->PushObject(obj.release());
                         }
