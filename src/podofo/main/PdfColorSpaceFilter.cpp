@@ -100,6 +100,39 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /Indexed color space name");
                 return false;
             }
+            case PdfColorSpaceType::Separation:
+            case PdfColorSpaceType::DeviceN:
+            {
+                PdfColorSpaceFilterPtr baseColorSpace;
+                unsigned short components;
+
+                if (arr->GetSize() < 3)
+                    goto InvalidSepDev; // Invalid array entry count
+
+                if(arr->MustFindAt(1).IsArray())
+                    components = arr->MustFindAt(1).GetArray().size();
+                else if(arr->MustFindAt(1).IsName())
+                    components = 1;
+                else
+                    goto InvalidSepDev;
+                
+                if (!TryCreateFromObject(arr->MustFindAt(2), baseColorSpace))
+                    goto InvalidSepDev;
+
+                // Ignore the tint and just treat as grayscale
+
+                if (components == 1)
+                    colorSpace = GetDeviceGrayInstace();
+                else
+                    goto InvalidSepDev;
+                
+                return true;
+
+            InvalidSepDev:
+                PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid /Separation or /DeviceN color space name");
+                return false;
+
+            }
             case PdfColorSpaceType::CalRGB:
             {
                 // Fallback to device RGB so images can still be processed
