@@ -546,15 +546,29 @@ void PdfFlateFilter::DecodeBlockImpl(const char* buffer, size_t len)
     m_stream.avail_in = static_cast<unsigned>(len);
     m_stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(buffer));
 
+    unsigned lastAvailIn;
+    
     do
     {
         m_stream.avail_out = BUFFER_SIZE;
         m_stream.next_out = m_buffer;
 
+        lastAvailIn = m_stream.avail_in;
+        
         switch ((flateErr = inflate(&m_stream, Z_NO_FLUSH)))
         {
-            case Z_NEED_DICT:
             case Z_DATA_ERROR:
+            {
+                // See if we can recover
+                
+                flateErr = inflateSync(&m_stream);
+                
+                if((flateErr == Z_OK) || (lastAvailIn < 1024))
+                    break;
+                
+                // Otherwise fall through
+            }
+            case Z_NEED_DICT:
             case Z_MEM_ERROR:
             {
                 PoDoFo::LogMessage(PdfLogSeverity::Error, "Flate Decoding Error from ZLib: {}", flateErr);

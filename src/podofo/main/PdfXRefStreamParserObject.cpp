@@ -111,6 +111,18 @@ void PdfXRefStreamParserObject::parseStream(const int64_t wArray[W_ARRAY_SIZE], 
     charbuff buffer;
     this->GetOrCreateStream().CopyTo(buffer);
 
+    unsigned encryptIndex = -1;
+
+    PdfObject* encrypt = GetDictionary().GetKey("Encrypt");
+
+    if (encrypt != nullptr && !encrypt->IsNull())
+    {
+        PdfReference encryptRef;
+
+        if (encrypt->TryGetReference(encryptRef))
+            encryptIndex = encryptRef.ObjectNumber();
+    }
+
     vector<int64_t>::const_iterator it = indices.begin();
     size_t offset = 0;
     while (it != indices.end())
@@ -125,9 +137,16 @@ void PdfXRefStreamParserObject::parseStream(const int64_t wArray[W_ARRAY_SIZE], 
         for (unsigned index = 0; index < (unsigned)count; index++)
         {
             unsigned objIndex = (unsigned)firstObj + index;
+
             auto& entry = (*m_entries)[objIndex];
+
             if (objIndex < m_entries->GetSize() && !entry.Parsed)
+            {
                 readXRefStreamEntry(entry, buffer.data() + offset, wArray);
+
+                if((entry.Offset == (size_t)GetOffset()) || (objIndex == encryptIndex))
+                    entry.Parsed = false; // Don't process trailers or encryption blocks
+            }
 
             offset += entryLen;
         }
