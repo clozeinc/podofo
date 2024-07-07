@@ -564,14 +564,17 @@ void PdfFlateFilter::DecodeBlockImpl(const char* buffer, size_t len)
                 flateErr = inflateSync(&m_stream);
                 
                 if((flateErr == Z_OK) || (lastAvailIn < 1024))
+                {
+                    PoDoFo::LogMessage(PdfLogSeverity::Warning, "Flate Decoding Error from ZLib (ignoring): {}", m_stream.msg);
                     break;
+                }
                 
                 // Otherwise fall through
             }
             case Z_NEED_DICT:
             case Z_MEM_ERROR:
             {
-                PoDoFo::LogMessage(PdfLogSeverity::Error, "Flate Decoding Error from ZLib: {}", flateErr);
+                PoDoFo::LogMessage(PdfLogSeverity::Error, "Flate Decoding Error from ZLib: {} {}", flateErr, m_stream.msg);
                 (void)inflateEnd(&m_stream);
 
                 FailEncodeDecode();
