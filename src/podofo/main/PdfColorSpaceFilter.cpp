@@ -148,6 +148,21 @@ bool PdfColorSpaceFilterFactory::TryCreateFromObject(const PdfObject& obj, PdfCo
                 colorSpace = GetDeviceRGBInstace();
                 return true;
             }
+            case PdfColorSpaceType::DeviceGray:
+            {
+                colorSpace = GetDeviceGrayInstace();
+                return true;
+            }
+            case PdfColorSpaceType::DeviceRGB:
+            {
+                colorSpace = GetDeviceRGBInstace();
+                return true;
+            }
+            case PdfColorSpaceType::DeviceCMYK:
+            {
+                colorSpace = GetDeviceCMYKInstace();
+                return true;
+            }
             case PdfColorSpaceType::ICCBased:
             {
                 // Try and pick the best alternative colorspace we can based on the number of components
