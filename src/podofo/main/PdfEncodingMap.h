@@ -7,6 +7,7 @@
 #ifndef PDF_ENCODING_MAP_H
 #define PDF_ENCODING_MAP_H
 
+#include <mutex>
 #include "PdfDeclarations.h"
 #include "PdfObject.h"
 #include "PdfName.h"
@@ -17,7 +18,7 @@ namespace PoDoFo {
 class PdfIndirectObjectList;
 class PdfFont;
 
-/** 
+/**
  * A PdfEncodingMap is a low level interface to convert
  * between utf8 and encoded strings in and to determine
  * correct CID mapping
