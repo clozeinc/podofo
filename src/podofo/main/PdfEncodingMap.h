@@ -293,6 +293,8 @@ private:
 
 private:
     PdfName m_Name;         // The name of the encoding
+    volatile bool m_Initialized;
+    std::mutex m_Lock;
     std::unordered_map<char32_t, char> m_EncodingTable; // The helper table for conversions into this encoding
 };
 

@@ -534,7 +534,9 @@ void PdfNullEncodingMap::AppendCIDMappingEntries(OutputStream& stream, const Pdf
 }
 
 PdfBuiltInEncoding::PdfBuiltInEncoding(const PdfName& name)
-    : PdfEncodingMapOneByte({ 1, 1, PdfCharCode(0), PdfCharCode(0xFF) }), m_Name(name)
+    : PdfEncodingMapOneByte({ 1, 1, PdfCharCode(0), PdfCharCode(0xFF) }),
+    m_Name(name),
+    m_Initialized(false)
 {
 }
 
@@ -562,7 +564,12 @@ void PdfBuiltInEncoding::CreateUnicodeToGIDMap(const unordered_map<unsigned, uns
 
 void PdfBuiltInEncoding::initEncodingTable()
 {
-    if (!m_EncodingTable.empty())
+    if(m_Initialized)
+        return;
+    
+    std::lock_guard<std::mutex> guard(m_Lock);
+
+    if(m_Initialized)
         return;
 
     const char32_t* cpUnicodeTable = this->GetToUnicodeTable();
@@ -572,6 +579,8 @@ void PdfBuiltInEncoding::initEncodingTable()
         m_EncodingTable[cpUnicodeTable[i]] =
             static_cast<unsigned char>(i);
     }
+    
+    m_Initialized = true;
 }
 
 bool PdfBuiltInEncoding::tryGetCharCode(char32_t codePoint, PdfCharCode& codeUnit) const
