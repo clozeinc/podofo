@@ -20,6 +20,8 @@ xmlNodePtr utls::FindChildElement(xmlNodePtr element, const string_view& prefix,
     for (auto child = xmlFirstElementChild(element); child != nullptr; child = xmlNextElementSibling(child))
     {
         if (child->ns != nullptr
+            && child->ns->prefix != nullptr
+            && child->name != nullptr
             && prefix == (const char*)child->ns->prefix
             && name == (const char*)child->name)
         {
