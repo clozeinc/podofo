@@ -86,15 +86,15 @@ void PdfDocument::Init()
 
     auto& catalogDict = m_Catalog->GetDictionary();
     auto namesObj = catalogDict.FindKey("Names");
-    if (namesObj != nullptr)
+    if (namesObj != nullptr && namesObj->GetDataType() != PdfDataType::Null)
         m_NameTrees.reset(new PdfNameTrees(*namesObj));
 
     auto outlinesObj = catalogDict.FindKey("Outlines");
-    if (outlinesObj != nullptr)
+    if (outlinesObj != nullptr && outlinesObj->GetDataType() != PdfDataType::Null)
         m_Outlines.reset(new PdfOutlines(*outlinesObj));
-
+    
     auto acroformObj = catalogDict.FindKey("AcroForm");
-    if (acroformObj != nullptr)
+    if (acroformObj != nullptr && acroformObj->GetDataType() != PdfDataType::Null)
         m_AcroForm.reset(new PdfAcroForm(*acroformObj));
 }
 
