@@ -1325,8 +1325,8 @@ double computeLength(const vector<const StatefulString*>& strings, const vector<
     auto fromStr = strings[fromAddr.StringIndex];
     auto toStr = strings[toAddr.StringIndex];
 
-    double fromScale = fromStr->State.T_rm[0];
-    double toScale = toStr->State.T_rm[0];
+    double fromScale = fromStr->State.T_m[0];
+    double toScale = toStr->State.T_m[0];
 
     // Advance the position before the first glyph
     auto fromPosition = fromStr->Position;
